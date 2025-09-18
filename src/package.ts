@@ -29,9 +29,13 @@ class Package {
     const logger = ora({ indent: 2 });
 
     try {
-      logger.start('Compiling files...');
+      logger.start('Type checking...');
       await execa`tsc --project ${this.rootDir} --noEmit`;
-      logger.succeed('Files compiled');
+      logger.succeed('Type check passed');
+
+      logger.start('Building project...');
+      await execa('npm', ['run', 'build'], { cwd: this.rootDir });
+      logger.succeed('Project built');
     } catch (error) {
       throw new PackageError(error, logger);
     }
