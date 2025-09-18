@@ -1,6 +1,6 @@
 // @ts-check
 
-/** @type {import(sympack).SympackConfig} */
+/** @type {import('sympack').SympackConfig} */
 const config = {
   install: {
     scope: 'local',
@@ -8,4 +8,4 @@ const config = {
   }
 };
 
-export default config;
+module.exports = config;
