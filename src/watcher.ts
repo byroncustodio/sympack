@@ -54,7 +54,7 @@ try {
     console.info(chalk.dim('Press Ctrl+C at any time to stop and exit'));
   } else {
     const message = (error as Error).message;
-    logger.fail(`${chalk.red(message)}`);
+    console.error(chalk.red(`\n${message}`));
     process.exit(1);
   }
 }

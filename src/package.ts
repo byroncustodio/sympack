@@ -37,6 +37,13 @@ class Package {
       await execa('npm', ['run', 'build'], { cwd: this.rootDir });
       logger.succeed('Project built');
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('Missing script: "build"')) {
+          logger.fail('No build script found in package.json');
+          throw new Error('sympack ran into an error. Exiting...');
+        }
+        throw error;
+      }
       throw new PackageError(error, logger);
     }
   }

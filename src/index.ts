@@ -54,7 +54,7 @@ program
     });
 
     nm.on('crash', () => {
-      nm.emit('quit');
+      process.exit(1);
     });
 
     nm.on('quit', async () => {
