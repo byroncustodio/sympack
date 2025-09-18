@@ -22,5 +22,9 @@ export async function isPackageExtraneous(
   const packageJSONPath = path.join(installPath, 'package.json');
   const content = await fs.readFile(packageJSONPath, 'utf-8');
   const packageJSON = JSON.parse(content) as PackageJson;
-  return !packageJSON.devDependencies?.[name];
+  return !(
+    packageJSON.dependencies?.[name] ||
+    packageJSON.devDependencies?.[name] ||
+    packageJSON.peerDependencies?.[name]
+  );
 }
