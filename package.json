@@ -1,0 +1,72 @@
+{
+  "name": "sympack",
+  "version": "1.0.0-development",
+  "description": "A local development tool that packs and installs packages on file changes.",
+  "author": "Byron Custodio",
+  "license": "MIT",
+  "homepage": "https://github.com/byroncustodio/sympack#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/byroncustodio/sympack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/byroncustodio/sympack/issues"
+  },
+  "type": "module",
+  "bin": {
+    "sympack": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "NODE_OPTIONS=\"--experimental-strip-types\" prettier --write .",
+    "format:check": "NODE_OPTIONS=\"--experimental-strip-types\" prettier --check .",
+    "test": "npm run build && node dist/index.js",
+    "commit": "cz",
+    "commit:all": "git add . && cz"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.8.6",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.1",
+    "execa": "^9.6.0",
+    "nodemon": "^3.1.10",
+    "ora": "^8.2.0"
+  },
+  "devDependencies": {
+    "@commitlint/config-conventional": "^19.8.1",
+    "@commitlint/cz-commitlint": "^19.8.1",
+    "@commitlint/types": "^19.8.1",
+    "@eslint/js": "^9.35.0",
+    "commitizen": "^4.3.1",
+    "commitlint": "^19.8.1",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.4.0",
+    "husky": "^9.1.7",
+    "jiti": "^2.5.1",
+    "lint-staged": "^16.1.6",
+    "prettier": "^3.6.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.43.0"
+  },
+  "engines": {
+    "node": ">=22.6.0 <=22.x.x"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "@commitlint/cz-commitlint"
+    }
+  }
+}
