@@ -30,8 +30,8 @@ program
     console.info(chalk.green('\nConfiguration loaded'));
 
     const scope = config.install!.scope;
-    const paths = config.install!.paths!;
-		const extensions = config.watch!.extensions!;
+    const paths = config.watch!.paths;
+    const extensions = config.watch!.extensions!;
 
     const nm = nodemon({
       script: path.resolve(__dirname, 'watcher.js'),
