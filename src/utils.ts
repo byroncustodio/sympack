@@ -1,15 +1,12 @@
-import { execa } from 'execa';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { PackageJson } from 'type-fest';
-import { promises as fs } from 'node:fs';
 import { PACKAGE_JSON_PATH } from './constants.js';
 
 export async function getPackageJSON(): Promise<
   Pick<PackageJson, 'name' | 'version'>
 > {
-  const packageJSONPath = PACKAGE_JSON_PATH;
-  await fs.access(packageJSONPath);
-  const content = await fs.readFile(packageJSONPath, 'utf-8');
+  const content = await fs.readFile(PACKAGE_JSON_PATH, 'utf-8');
   return JSON.parse(content);
 }
 

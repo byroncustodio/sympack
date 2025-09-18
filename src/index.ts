@@ -9,6 +9,7 @@ import nodemon from 'nodemon';
 import { loadConfig, validateConfig } from './config.js';
 import ora from 'ora';
 import { TEMP_DIR } from './constants.js';
+import { ScopeType } from './types.js';
 import {
   getPackageFileName,
   getPackageJSON,
@@ -18,6 +19,9 @@ import {
 const __dirname = import.meta.dirname;
 const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
 const program = new Command();
+let installScope: ScopeType;
+let installPaths: string[];
+let isQuitting = false;
 
 program
   .name(packageJson.name)
@@ -31,8 +35,8 @@ program
 
     const watchPaths = config.watch!.paths;
     const watchExtensions = config.watch!.extensions!;
-    const installScope = config.install!.scope;
-    const installPaths = config.install!.paths!;
+    installScope = config.install!.scope;
+    installPaths = config.install!.paths!;
 
     const nm = nodemon({
       script: path.resolve(__dirname, 'watcher.js'),
@@ -40,7 +44,6 @@ program
       watch: watchPaths,
       ext: watchExtensions.join(','),
       delay: 2000,
-      signal: 'SIGINT',
     });
 
     nm.on('restart', (event) => {
@@ -56,48 +59,6 @@ program
     nm.on('crash', () => {
       process.exit(1);
     });
-
-    nm.on('quit', async () => {
-      const tempDir = TEMP_DIR;
-      const logger = ora({ indent: 2 });
-      const { name, version } = await getPackageJSON();
-
-      console.info('\nStopping sympack...');
-
-      if (installScope === 'global') {
-        logger.start('Cleaning up global installation');
-        try {
-          await execa('npm', ['un', '-g', name!]);
-        } catch {
-          logger.fail('Failed to clean up global installation');
-        }
-        logger.succeed();
-      } else {
-        for (const installPath of installPaths) {
-          logger.start(`Cleaning up ${chalk.white.bold(installPath)}`);
-          try {
-            if (await isPackageExtraneous(name!, installPath)) {
-              await execa('npm', ['un', name!], { cwd: installPath });
-            } else {
-              await execa('npm', ['ci'], { cwd: installPath });
-            }
-          } catch {
-            logger.fail(`Failed to clean up ${chalk.white.bold(installPath)}`);
-            continue;
-          }
-          logger.succeed();
-        }
-      }
-
-      logger.start('Removing temp package file');
-      await fs.rm(path.resolve(tempDir, getPackageFileName(name!, version!)), {
-        force: true,
-      });
-      logger.succeed();
-
-      console.info('\nStopped sympack. Exiting...');
-      process.exit();
-    });
   });
 
 program.parseAsync().catch((error) => {
@@ -105,6 +66,57 @@ program.parseAsync().catch((error) => {
     process.exit(0);
   } else {
     console.error('Error:', error.message);
+    process.exit(1);
+  }
+});
+
+process.on('SIGINT', async () => {
+  if (isQuitting) return;
+  isQuitting = true;
+
+  const logger = ora({ indent: 2 });
+
+  try {
+    console.info('\nStopping sympack...');
+
+    const tempDir = TEMP_DIR;
+    const { name, version } = await getPackageJSON();
+
+    if (installScope === 'global') {
+      logger.start('Cleaning up global installation');
+      try {
+        await execa('npm', ['un', '-g', name!]);
+      } catch {
+        logger.fail('Failed to clean up global installation');
+      }
+      logger.succeed();
+    } else {
+      for (const installPath of installPaths) {
+        logger.start(`Cleaning up ${chalk.white.bold(installPath)}`);
+        try {
+          if (await isPackageExtraneous(name!, installPath)) {
+            await execa('npm', ['un', name!], { cwd: installPath });
+          } else {
+            await execa('npm', ['ci'], { cwd: installPath });
+          }
+        } catch {
+          logger.fail(`Failed to clean up ${chalk.white.bold(installPath)}`);
+          continue;
+        }
+        logger.succeed();
+      }
+    }
+
+    logger.start('Removing temp package file');
+    await fs.rm(path.resolve(tempDir, getPackageFileName(name!, version!)), {
+      force: true,
+    });
+    logger.succeed();
+
+    console.info('\nStopped sympack. Exiting...');
+    process.exit(0);
+  } catch (error) {
+    logger.fail((error as Error).message);
     process.exit(1);
   }
 });
