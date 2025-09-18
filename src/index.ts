@@ -15,6 +15,7 @@ import {
   isPackageExtraneous,
 } from './utils.js';
 
+const __dirname = import.meta.dirname;
 const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
 const program = new Command();
 
@@ -33,7 +34,7 @@ program
 		const extensions = config.watch!.extensions!;
 
     const nm = nodemon({
-      script: './dist/watcher.js',
+      script: path.resolve(__dirname, 'watcher.js'),
       args: ['--scope', scope, '--paths', paths.join(',')],
       watch: paths,
       ext: extensions.join(','),
