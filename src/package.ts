@@ -98,8 +98,7 @@ class Package {
               'i',
               path.join(TEMP_DIR, this.file),
               '--no-save',
-              '--ignore-scripts',
-              '--legacy-peer-deps',
+              '--ignore-scripts'
             ],
             { cwd: p },
           );
