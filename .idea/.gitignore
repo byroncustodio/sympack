@@ -8,3 +8,5 @@
 /dataSources.local.xml
 # Dictionaries
 /dictionaries/
+/copilot.data.migration.agent.xml
+/copilot.data.migration.edit.xml
