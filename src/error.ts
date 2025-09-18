@@ -15,7 +15,9 @@ class PackageError extends Error {
       logger.fail(`${(error as Error).message}`);
     } else {
       super(typeof error === 'string' ? error : JSON.stringify(error));
-      logger.fail(`${typeof error === 'string' ? error : JSON.stringify(error)}`);
+      logger.fail(
+        `${typeof error === 'string' ? error : JSON.stringify(error)}`,
+      );
     }
     this.name = 'PackageError';
   }

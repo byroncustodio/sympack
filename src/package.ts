@@ -96,7 +96,6 @@ class Package {
             'npm',
             [
               'i',
-              '-D',
               path.join(TEMP_DIR, this.file),
               '--no-save',
               '--ignore-scripts',
