@@ -29,15 +29,16 @@ program
     validateConfig(config);
     console.info(chalk.green('\nConfiguration loaded'));
 
-    const scope = config.install!.scope;
-    const paths = config.watch!.paths;
-    const extensions = config.watch!.extensions!;
+    const watchPaths = config.watch!.paths;
+    const watchExtensions = config.watch!.extensions!;
+    const installScope = config.install!.scope;
+    const installPaths = config.install!.paths!;
 
     const nm = nodemon({
       script: path.resolve(__dirname, 'watcher.js'),
-      args: ['--scope', scope, '--paths', paths.join(',')],
-      watch: paths,
-      ext: extensions.join(','),
+      args: ['--scope', installScope, '--paths', installPaths.join(',')],
+      watch: watchPaths,
+      ext: watchExtensions.join(','),
       delay: 2000,
       signal: 'SIGINT',
     });
@@ -63,7 +64,7 @@ program
 
       console.info('\nStopping sympack...');
 
-      if (scope === 'global') {
+      if (installScope === 'global') {
         logger.start('Cleaning up global installation');
         try {
           await execa('npm', ['un', '-g', name!]);
@@ -72,7 +73,7 @@ program
         }
         logger.succeed();
       } else {
-        for (const installPath of paths) {
+        for (const installPath of installPaths) {
           logger.start(`Cleaning up ${chalk.white.bold(installPath)}`);
           try {
             if (await isPackageExtraneous(name!, installPath)) {
