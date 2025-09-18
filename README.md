@@ -77,7 +77,7 @@ const config = {
   },
 };
 
-module.exports = config;
+export default config;
 ```
 
 Example `sympack.config.local.js`:
@@ -93,7 +93,7 @@ const config = {
   },
 };
 
-module.exports = config;
+export default config;
 ```
 
 ### Common Use Cases
