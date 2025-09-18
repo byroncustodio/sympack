@@ -1,11 +1,8 @@
 import chalk from 'chalk';
-import ora from 'ora';
 import PackageError from './error.js';
 import Package from './package.js';
 import { ScopeType } from './types.js';
 import { getPackageJSON } from './utils.js';
-
-const logger = ora();
 
 try {
   const args = process.argv.slice(2);

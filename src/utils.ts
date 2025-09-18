@@ -1,4 +1,5 @@
 import { execa } from 'execa';
+import path from 'node:path';
 import { PackageJson } from 'type-fest';
 import { promises as fs } from 'node:fs';
 import { PACKAGE_JSON_PATH } from './constants.js';
@@ -21,9 +22,8 @@ export async function isPackageExtraneous(
   name: string,
   installPath: string,
 ): Promise<boolean> {
-  const { stdout } = await execa('npm', ['ls', name, '--json', '--depth=0'], {
-    cwd: installPath,
-  });
-  const result = JSON.parse(stdout);
-  return result.dependencies?.[name]?.extraneous === true;
+  const packageJSONPath = path.join(installPath, 'package.json');
+  const content = await fs.readFile(packageJSONPath, 'utf-8');
+  const packageJSON = JSON.parse(content) as PackageJson;
+  return !packageJSON.devDependencies?.[name];
 }
