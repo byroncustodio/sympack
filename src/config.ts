@@ -9,7 +9,7 @@ import {
   CONFIG_LOCAL_FILE,
   CONFIG_VALUE_REGEX,
 } from './constants.js';
-import { SympackConfig } from './types.js';
+import { ProjectConfig, SympackConfig } from './types.js';
 
 const __dirname = import.meta.dirname;
 
@@ -117,8 +117,8 @@ export async function loadConfig(): Promise<SympackConfig> {
         `scope: '${scope}'`,
       );
       content = content.replace(
-        new RegExp(`paths: ${CONFIG_VALUE_REGEX.source}`),
-        `paths: [${paths.map((p) => `'${p}'`).join(', ')}]`,
+        new RegExp(`projects: ${CONFIG_VALUE_REGEX.source}`),
+        `projects: [${paths.map((p) => `{ path: '${p}' }`).join(', ')}]`,
       );
       await fs.writeFile(localConfigPath, content, 'utf-8');
       logger.succeed(`Created: ${chalk.green(CONFIG_LOCAL_FILE)}`);
@@ -154,7 +154,7 @@ export async function loadConfig(): Promise<SympackConfig> {
     merge(localConfig, {
       install: {
         scope,
-        paths,
+        projects: paths.map((p) => ({ path: p }) as ProjectConfig),
       },
     } as SympackConfig);
   }
@@ -193,7 +193,7 @@ export function validateConfig(config: SympackConfig): void {
 
   if (
     config.install.scope === 'local' &&
-    (!config.install.paths || config.install.paths.length === 0)
+    (!config.install.projects || config.install.projects.length === 0)
   ) {
     logger.fail(`Missing install.paths configuration in ${CONFIG_LOCAL_FILE}`);
     process.exit(1);

@@ -89,7 +89,11 @@ Example `sympack.config.local.js`:
 const config = {
   install: {
     scope: 'local',
-    paths: ['../my-app', '/absolute/path/to/project'],
+    projects: [
+      { path: '../my-app' },
+      { path: '/absolute/path/to/project' },
+      { path: '../project-with-peers', hasPeerDependencies: true }
+    ],
   },
 };
 
@@ -127,7 +131,11 @@ const config = {
 const config = {
   install: {
     scope: 'local',
-    paths: ['../frontend-app', '../backend-service', '../shared-components'],
+    projects: [
+      { path: '../frontend-app' },
+      { path: '../backend-service' },
+      { path: '../shared-components', hasPeerDependencies: true }
+    ],
   },
 };
 ```
@@ -147,8 +155,13 @@ const config = {
 
 - **scope**: `'global' | 'local'` - Installation scope
   - `'global'`: Install package globally using `npm install -g`
-  - `'local'`: Install package in specified local paths
-- **paths**: `string[]` - Array of absolute or relative paths for local installation
+  - `'local'`: Install package in specified local projects
+- **projects**: `ProjectConfig[]` - Array of project configurations for local installation
+
+#### `ProjectConfig`
+
+- **path**: `string` - Absolute or relative path to the project directory
+- **hasPeerDependencies**: `boolean` (optional) - Whether to use `--legacy-peer-deps` flag during installation (default: `false`)
 
 ### CLI Commands
 

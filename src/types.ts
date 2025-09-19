@@ -1,6 +1,24 @@
 export type ScopeType = 'global' | 'local';
 export type SympackConfig = Partial<Config>;
 
+export interface ProjectConfig {
+  /**
+   * The path to the project where the package will be installed.
+   *
+   * This can be an absolute path or a path relative to the current working directory.
+   *
+   * @example '/path/to/project' or './relative/path/to/project'
+   */
+  path: string;
+  /**
+   * Indicates whether the project has peer dependencies that need to be resolved during installation.
+   * If set to true, the installation command will include the `--legacy-peer-deps` flag.
+   *
+   * @default false
+   */
+  hasPeerDependencies?: boolean;
+}
+
 interface Config {
   watch: {
     /**
@@ -24,10 +42,9 @@ interface Config {
      */
     scope: ScopeType;
     /**
-     * An array of absolute or relative paths where the package will be installed.
-     * @example ['/path/to/project1', '../path/to/project2']
+     * An array of project configurations where the package will be installed when `scope` is set to `local`.
      */
-    paths?: string[];
+    projects?: ProjectConfig[];
   };
 }
 
@@ -36,5 +53,5 @@ export interface PackageProps {
   name: string;
   version: string;
   scope: ScopeType;
-  paths?: string[];
+  projects?: ProjectConfig[];
 }

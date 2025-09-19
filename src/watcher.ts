@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import PackageError from './error.js';
 import Package from './package.js';
-import { ScopeType } from './types.js';
+import { ProjectConfig, ScopeType } from './types.js';
 import { getPackageJSON } from './utils.js';
 
 try {
@@ -9,17 +9,25 @@ try {
   const scope = args.includes('--scope')
     ? (args[args.indexOf('--scope') + 1] as ScopeType)
     : 'local';
-  const pathsArg = args.includes('--paths')
-    ? scope === 'local'
-      ? args[args.indexOf('--paths') + 1]
-      : ''
-    : '';
-  const paths = pathsArg
-    ? pathsArg
-        .split(',')
-        .map((p) => p.trim())
-        .filter((p) => p)
-    : [];
+
+  const projectRegex = /--project\s+(.+?)(?=\s--|$)/g;
+  const projects: ProjectConfig[] = [];
+  let match;
+
+  while ((match = projectRegex.exec(args.join(' '))) !== null) {
+    const props = match[1].split(',').map((p) => p.trim());
+    let path = '';
+    let hasPeerDependencies: boolean | undefined;
+    props.forEach((prop) => {
+      const [key, value] = prop.split('=');
+      if (key === 'path') path = value;
+      if (key === 'hasPeerDependencies') hasPeerDependencies = value === 'true';
+    });
+    projects.push({
+      path,
+      ...(hasPeerDependencies !== undefined ? { hasPeerDependencies } : {}),
+    });
+  }
 
   const { name, version } = await getPackageJSON();
 
@@ -28,7 +36,7 @@ try {
     name: name!,
     version: version!,
     scope,
-    paths,
+    projects,
   });
 
   console.info(`\nRunning sympack for ${chalk.white.bold(pkg.name)}`);
