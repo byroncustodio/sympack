@@ -9,7 +9,7 @@ import nodemon from 'nodemon';
 import { loadConfig, validateConfig } from './config.js';
 import ora from 'ora';
 import { TEMP_DIR } from './constants.js';
-import { ScopeType } from './types.js';
+import { ProjectConfig, ScopeType } from './types.js';
 import {
   getPackageFileName,
   getPackageJSON,
@@ -20,7 +20,7 @@ const __dirname = import.meta.dirname;
 const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
 const program = new Command();
 let installScope: ScopeType;
-let installPaths: string[];
+let installProjects: ProjectConfig[];
 let isQuitting = false;
 
 program
@@ -36,11 +36,23 @@ program
     const watchPaths = config.watch!.paths;
     const watchExtensions = config.watch!.extensions!;
     installScope = config.install!.scope;
-    installPaths = config.install!.paths!;
+    installProjects = config.install!.projects!;
+
+    const args: string[] = [];
+
+    args.push('--scope');
+    args.push(installScope);
+
+    installProjects.forEach((p) => {
+      args.push('--project');
+      args.push(
+        `path=${p.path}${p.hasPeerDependencies !== undefined ? `,hasPeerDependencies=${p.hasPeerDependencies}` : ''}`,
+      );
+    });
 
     const nm = nodemon({
       script: path.resolve(__dirname, 'watcher.js'),
-      args: ['--scope', installScope, '--paths', installPaths.join(',')],
+      args,
       watch: watchPaths,
       ext: watchExtensions.join(','),
       delay: 2000,
@@ -91,7 +103,8 @@ process.on('SIGINT', async () => {
       }
       logger.succeed();
     } else {
-      for (const installPath of installPaths) {
+      for (const installProject of installProjects) {
+        const installPath = installProject.path;
         logger.start(`Cleaning up ${chalk.white.bold(installPath)}`);
         try {
           if (await isPackageExtraneous(name!, installPath)) {

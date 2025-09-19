@@ -5,7 +5,7 @@ import path from 'node:path';
 import ora from 'ora';
 import { TEMP_DIR } from './constants.js';
 import PackageError from './error.js';
-import { PackageProps, ScopeType } from './types.js';
+import { PackageProps, ProjectConfig, ScopeType } from './types.js';
 import { getPackageFileName } from './utils.js';
 
 class Package {
@@ -13,7 +13,7 @@ class Package {
   readonly name: string;
   readonly version: string;
   readonly scope: ScopeType;
-  readonly paths: string[];
+  readonly projects: ProjectConfig[];
   readonly file: string;
 
   constructor(props: PackageProps) {
@@ -21,7 +21,7 @@ class Package {
     this.name = props.name;
     this.version = props.version;
     this.scope = props.scope;
-    this.paths = props.paths ?? [];
+    this.projects = props.projects ?? [];
     this.file = getPackageFileName(props.name, props.version);
   }
 
@@ -64,8 +64,8 @@ class Package {
       );
       logger.succeed('Package created');
       logger.indent = 4;
-      logger.info(chalk.dim(`Created in: ${tempDir}`));
-      logger.info(chalk.dim(`File: ${this.file}`));
+      logger.info(chalk.dim('Created in:', tempDir));
+      logger.info(chalk.dim('File:', this.file));
     } catch (error) {
       throw new PackageError(error, logger);
     }
@@ -89,20 +89,25 @@ class Package {
         throw new PackageError(error, logger);
       }
     } else {
-      for (const p of this.paths) {
+      for (const project of this.projects) {
         try {
-          logger.start(`Installing in ${p}...`);
-          await execa(
-            'npm',
-            [
-              'i',
-              path.join(TEMP_DIR, this.file),
-              '--no-save',
-              '--ignore-scripts'
-            ],
-            { cwd: p },
+          logger.start(`Installing in ${project.path}...`);
+          const args = [
+            'i',
+            path.join(TEMP_DIR, this.file),
+            '--no-save',
+            '--ignore-scripts',
+          ];
+          if (project.hasPeerDependencies) {
+            args.push('--legacy-peer-deps');
+          }
+          await execa('npm', args, { cwd: project.path });
+          logger.succeed(`Package installed in ${project.path}`);
+          logger.indent = 4;
+          logger.info(
+            chalk.dim('hasPeerDependencies:', !!project.hasPeerDependencies),
           );
-          logger.succeed(`Package installed in ${p}`);
+          logger.indent = 2;
         } catch (error) {
           throw new PackageError(error, logger);
         }

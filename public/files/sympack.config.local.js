@@ -4,7 +4,7 @@
 const config = {
   install: {
     scope: 'local',
-    paths: undefined
+    projects: undefined
   }
 };
 
