@@ -6,11 +6,7 @@ import ora from 'ora';
 import { TEMP_DIR } from './constants.js';
 import PackageError from './error.js';
 import { PackageProps, ProjectConfigInternal, ScopeType } from './types.js';
-import {
-  getPackageFileName,
-  getPackageVersionInProject,
-  isPackageExtraneous,
-} from './utils.js';
+import { getPackageFileName } from './utils.js';
 
 class Package {
   readonly rootDir: string;
@@ -93,18 +89,6 @@ class Package {
         throw new PackageError(error, logger);
       }
     } else {
-      for (const project of this.projects) {
-        const isExtraneous = await isPackageExtraneous(this.name, project.path);
-        if (!isExtraneous) {
-          const { type, version } = await getPackageVersionInProject(
-            this.name,
-            project.path,
-          );
-          project.type = type;
-          project.version = version;
-        }
-      }
-
       for (const project of this.projects) {
         try {
           logger.start(`Installing in ${project.path}...`);

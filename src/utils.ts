@@ -4,7 +4,7 @@ import { PackageJson } from 'type-fest';
 import { PACKAGE_JSON_PATH } from './constants.js';
 
 function getVersion(dep: string) {
-  const match = dep.match(/\d+(?:\.\d+){0,2}/);
+  const match = dep.match(/\d+(?:\.\d+){0,2}(?:-.*)?/);
   return match ? match[0] : undefined;
 }
 
