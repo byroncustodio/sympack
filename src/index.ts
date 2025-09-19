@@ -7,10 +7,38 @@ import path from 'node:path';
 import nodemon from 'nodemon';
 import { loadConfig, validateConfig } from './config.js';
 import ora from 'ora';
+import { ProjectConfigInternal } from './types.js';
+import { getPackageVersionInProject, isPackageExtraneous } from './utils.js';
 
 const __dirname = import.meta.dirname;
 const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
 const program = new Command();
+
+function buildProjectArgs(project: ProjectConfigInternal) {
+  const args: string[] = [];
+
+  args.push(`path=${project.path}`);
+
+  if (project.noSave !== undefined) {
+    args.push(`noSave=${project.noSave}`);
+  } else {
+    args.push('noSave=true');
+  }
+
+  if (project.hasPeerDependencies !== undefined) {
+    args.push(`hasPeerDependencies=${project.hasPeerDependencies}`);
+  }
+
+  if (project.type) {
+    args.push(`type=${project.type}`);
+  }
+
+  if (project.version) {
+    args.push(`version=${project.version}`);
+  }
+
+  return args.join(',');
+}
 
 program
   .name(packageJson.name)
@@ -25,7 +53,23 @@ program
     const watchPaths = config.watch!.paths;
     const watchExtensions = config.watch!.extensions!;
     const installScope = config.install!.scope;
-    const installProjects = config.install!.projects!;
+    const installProjects = config.install!
+      .projects! as ProjectConfigInternal[];
+
+    for (const project of installProjects) {
+      const isExtraneous = await isPackageExtraneous(
+        packageJson.name,
+        project.path,
+      );
+      if (!isExtraneous) {
+        const { type, version } = await getPackageVersionInProject(
+          packageJson.name,
+          project.path,
+        );
+        project.type = type;
+        project.version = version;
+      }
+    }
 
     const args: string[] = [];
 
@@ -34,9 +78,7 @@ program
 
     installProjects.forEach((p) => {
       args.push('--project');
-      args.push(
-        `path=${p.path}${p.noSave !== undefined ? `,noSave=${p.noSave}` : ',noSave=true'}${p.hasPeerDependencies !== undefined ? `,hasPeerDependencies=${p.hasPeerDependencies}` : ''}`,
-      );
+      args.push(buildProjectArgs(p));
     });
 
     const nm = nodemon({

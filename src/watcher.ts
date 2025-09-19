@@ -51,16 +51,22 @@ try {
     let path = '';
     let noSave: boolean | undefined;
     let hasPeerDependencies: boolean | undefined;
+    let type: string | undefined;
+    let version: string | undefined;
     props.forEach((prop) => {
       const [key, value] = prop.split('=');
       if (key === 'path') path = value;
       if (key === 'noSave') noSave = value === 'true';
       if (key === 'hasPeerDependencies') hasPeerDependencies = value === 'true';
+      if (key === 'type') type = value;
+      if (key === 'version') version = value;
     });
     projects.push({
       path,
       ...(noSave !== undefined ? { noSave } : { noSave: true }),
       ...(hasPeerDependencies !== undefined ? { hasPeerDependencies } : {}),
+      ...(type ? { type } : {}),
+      ...(version ? { version } : {}),
     });
   }
 
@@ -103,6 +109,8 @@ process.on('SIGINT', async () => {
   if (isExiting) return;
   isExiting = true;
   const logger = ora({ indent: 2 });
+
+  console.log(pkg.projects);
 
   try {
     console.info('\nStopping sympack...');
