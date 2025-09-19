@@ -92,7 +92,7 @@ const config = {
     projects: [
       { path: '../my-app' },
       { path: '/absolute/path/to/project' },
-      { path: '../project-with-peers', hasPeerDependencies: true }
+      { path: '../project-with-peers', hasPeerDependencies: true },
     ],
   },
 };
@@ -134,7 +134,7 @@ const config = {
     projects: [
       { path: '../frontend-app' },
       { path: '../backend-service' },
-      { path: '../shared-components', hasPeerDependencies: true }
+      { path: '../shared-components', hasPeerDependencies: true },
     ],
   },
 };

@@ -2,26 +2,15 @@
 
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { execa } from 'execa';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import nodemon from 'nodemon';
 import { loadConfig, validateConfig } from './config.js';
 import ora from 'ora';
-import { TEMP_DIR } from './constants.js';
-import { ProjectConfig, ScopeType } from './types.js';
-import {
-  getPackageFileName,
-  getPackageJSON,
-  isPackageExtraneous,
-} from './utils.js';
 
 const __dirname = import.meta.dirname;
 const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
 const program = new Command();
-let installScope: ScopeType;
-let installProjects: ProjectConfig[];
-let isQuitting = false;
 
 program
   .name(packageJson.name)
@@ -35,8 +24,8 @@ program
 
     const watchPaths = config.watch!.paths;
     const watchExtensions = config.watch!.extensions!;
-    installScope = config.install!.scope;
-    installProjects = config.install!.projects!;
+    const installScope = config.install!.scope;
+    const installProjects = config.install!.projects!;
 
     const args: string[] = [];
 
@@ -46,7 +35,7 @@ program
     installProjects.forEach((p) => {
       args.push('--project');
       args.push(
-        `path=${p.path}${p.hasPeerDependencies !== undefined ? `,hasPeerDependencies=${p.hasPeerDependencies}` : ''}`,
+        `path=${p.path}${p.noSave !== undefined ? `,noSave=${p.noSave}` : ',noSave=true'}${p.hasPeerDependencies !== undefined ? `,hasPeerDependencies=${p.hasPeerDependencies}` : ''}`,
       );
     });
 
@@ -71,6 +60,12 @@ program
     nm.on('crash', () => {
       process.exit(1);
     });
+
+    nm.on('exit', (code) => {
+      if (!code) {
+        process.exit(0);
+      }
+    });
   });
 
 program.parseAsync().catch((error) => {
@@ -78,58 +73,6 @@ program.parseAsync().catch((error) => {
     process.exit(0);
   } else {
     console.error('Error:', error.message);
-    process.exit(1);
-  }
-});
-
-process.on('SIGINT', async () => {
-  if (isQuitting) return;
-  isQuitting = true;
-
-  const logger = ora({ indent: 2 });
-
-  try {
-    console.info('\nStopping sympack...');
-
-    const tempDir = TEMP_DIR;
-    const { name, version } = await getPackageJSON();
-
-    if (installScope === 'global') {
-      logger.start('Cleaning up global installation');
-      try {
-        await execa('npm', ['un', '-g', name!]);
-      } catch {
-        logger.fail('Failed to clean up global installation');
-      }
-      logger.succeed();
-    } else {
-      for (const installProject of installProjects) {
-        const installPath = installProject.path;
-        logger.start(`Cleaning up ${chalk.white.bold(installPath)}`);
-        try {
-          if (await isPackageExtraneous(name!, installPath)) {
-            await execa('npm', ['un', name!], { cwd: installPath });
-          } else {
-            await execa('npm', ['ci'], { cwd: installPath });
-          }
-        } catch {
-          logger.fail(`Failed to clean up ${chalk.white.bold(installPath)}`);
-          continue;
-        }
-        logger.succeed();
-      }
-    }
-
-    logger.start('Removing temp package file');
-    await fs.rm(path.resolve(tempDir, getPackageFileName(name!, version!)), {
-      force: true,
-    });
-    logger.succeed();
-
-    console.info('\nStopped sympack. Exiting...');
-    process.exit(0);
-  } catch (error) {
-    logger.fail((error as Error).message);
     process.exit(1);
   }
 });

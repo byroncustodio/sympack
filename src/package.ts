@@ -5,15 +5,19 @@ import path from 'node:path';
 import ora from 'ora';
 import { TEMP_DIR } from './constants.js';
 import PackageError from './error.js';
-import { PackageProps, ProjectConfig, ScopeType } from './types.js';
-import { getPackageFileName } from './utils.js';
+import { PackageProps, ProjectConfigInternal, ScopeType } from './types.js';
+import {
+  getPackageFileName,
+  getPackageVersionInProject,
+  isPackageExtraneous,
+} from './utils.js';
 
 class Package {
   readonly rootDir: string;
   readonly name: string;
   readonly version: string;
   readonly scope: ScopeType;
-  readonly projects: ProjectConfig[];
+  readonly projects: ProjectConfigInternal[];
   readonly file: string;
 
   constructor(props: PackageProps) {
@@ -90,20 +94,32 @@ class Package {
       }
     } else {
       for (const project of this.projects) {
+        const isExtraneous = await isPackageExtraneous(this.name, project.path);
+        if (!isExtraneous) {
+          const { type, version } = await getPackageVersionInProject(
+            this.name,
+            project.path,
+          );
+          project.type = type;
+          project.version = version;
+        }
+      }
+
+      for (const project of this.projects) {
         try {
           logger.start(`Installing in ${project.path}...`);
-          const args = [
-            'i',
-            path.join(TEMP_DIR, this.file),
-            '--no-save',
-            '--ignore-scripts',
-          ];
+          const args = ['i', path.join(TEMP_DIR, this.file)];
+          if (project.noSave) {
+            args.push('--no-save');
+          }
           if (project.hasPeerDependencies) {
             args.push('--legacy-peer-deps');
           }
+          args.push('--ignore-scripts');
           await execa('npm', args, { cwd: project.path });
           logger.succeed(`Package installed in ${project.path}`);
           logger.indent = 4;
+          logger.info(chalk.dim('hasNoSave:', !!project.noSave));
           logger.info(
             chalk.dim('hasPeerDependencies:', !!project.hasPeerDependencies),
           );

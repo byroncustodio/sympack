@@ -11,12 +11,24 @@ export interface ProjectConfig {
    */
   path: string;
   /**
+   * Indicates whether to save the installed package to the project's `package.json` dependencies.
+   * If set to true, the installation command will include the `--no-save` flag.
+   *
+   * @default true
+   */
+  noSave?: boolean;
+  /**
    * Indicates whether the project has peer dependencies that need to be resolved during installation.
    * If set to true, the installation command will include the `--legacy-peer-deps` flag.
    *
    * @default false
    */
   hasPeerDependencies?: boolean;
+}
+
+export interface ProjectConfigInternal extends ProjectConfig {
+  type?: string;
+  version?: string;
 }
 
 interface Config {
@@ -53,5 +65,5 @@ export interface PackageProps {
   name: string;
   version: string;
   scope: ScopeType;
-  projects?: ProjectConfig[];
+  projects?: ProjectConfigInternal[];
 }
