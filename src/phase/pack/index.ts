@@ -7,7 +7,7 @@ import Task from '../../models/Task.js';
 import { getPackageFileName, getPackageJSON } from '../../common/utils.js';
 
 const createPackage = new Task({
-  message: 'Creating package file...',
+  message: 'Creating package file',
   execute: async function (this: Task) {
     try {
       await execa({
@@ -22,7 +22,7 @@ const createPackage = new Task({
 });
 
 const movePackage = new Task({
-  message: 'Moving file to temp directory...',
+  message: 'Moving to temp directory',
   execute: async function (this: Task) {
     const tempDir = TEMP_DIR;
     const { name, version } = await getPackageJSON();

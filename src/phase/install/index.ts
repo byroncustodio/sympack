@@ -8,7 +8,7 @@ import Task from '../../models/Task.js';
 import { getPackageFileName, getPackageJSON } from '../../common/utils.js';
 
 const installGlobal = new Task({
-  message: 'Installing to global prefix...',
+  message: 'Installing in global prefix',
   execute: async function (this: Task) {
     const tempDir = TEMP_DIR;
     const { name, version } = await getPackageJSON();
@@ -37,7 +37,7 @@ function phase() {
     for (const project of projects) {
       tasks.push(
         new Task({
-          message: 'Installing in ' + project.path + '...',
+          message: 'Installing in ' + project.path,
           execute: async function (this: Task) {
             const tempDir = TEMP_DIR;
             const { name, version } = await getPackageJSON();

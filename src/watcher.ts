@@ -3,6 +3,7 @@ import chokidar, { FSWatcher } from 'chokidar';
 import { promises as fs } from 'fs';
 import { WatcherProps } from './common/types.js';
 import Phase from './models/Phase.js';
+import cleanup from './phase/cleanup/index.js';
 
 enum WatcherState {
   Idle,
@@ -84,16 +85,15 @@ class Watcher {
   }
 
   async stop() {
+    const phases: Phase[] = [];
+
     if (!this.watcher) {
       console.warn(chalk.yellow('Watcher is not running.'));
       return;
     }
 
-    if (this.state === WatcherState.ShuttingDown) {
-      console.warn(
-        chalk.yellow('Force stopped watcher. Cleanup may be incomplete.'),
-      );
-      return;
+    if (!this.currentPhase || this.currentPhase.name === 'Install') {
+      phases.push(cleanup());
     }
 
     this.state = WatcherState.ShuttingDown;
@@ -102,7 +102,16 @@ class Watcher {
       await this.currentPhase.abort();
     }
 
+    console.info(chalk.white.bold('\nStopping sympack...\n'));
+
+    for (const phase of phases) {
+      this.currentPhase = phase;
+      await phase.run();
+    }
+
     await this.watcher.close();
+
+    console.info(chalk.white.bold('\nStopped sympack. Exiting...'));
   }
 }
 
