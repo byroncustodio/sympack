@@ -2,6 +2,18 @@
   "name": "sympack",
   "version": "1.0.0-development",
   "description": "A local development tool that packs and installs packages on file changes.",
+  "keywords": [
+    "development",
+    "file-watcher",
+    "chokidar",
+    "tool",
+    "workflow",
+    "automation",
+    "testing",
+    "dev-tool",
+    "symlink",
+    "live-reload"
+  ],
   "author": "Byron Custodio",
   "license": "MIT",
   "homepage": "https://github.com/byroncustodio/sympack#readme",
