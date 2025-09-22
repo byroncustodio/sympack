@@ -1,165 +1,109 @@
 import chalk from 'chalk';
-import { execa, ExecaError } from 'execa';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import ora from 'ora';
-import { TEMP_DIR } from './constants.js';
-import PackageError from './error.js';
-import Package from './package.js';
-import { ProjectConfigInternal, ScopeType } from './types.js';
-import {
-  getPackageFileName,
-  getPackageJSON,
-  isPackageExtraneous,
-} from './utils.js';
+import chokidar, { FSWatcher } from 'chokidar';
+import { promises as fs } from 'fs';
+import { WatcherProps } from './common/types.js';
+import Phase from './models/Phase.js';
 
-let isExiting = false;
-let scope: ScopeType;
-let pkg: Package;
-
-async function handleReinstall(name: string, project: ProjectConfigInternal) {
-  const projectPath = project.path;
-  const projectVersion = project.version;
-
-  if (await isPackageExtraneous(name!, project.path)) {
-    await execa('npm', ['un', name!], { cwd: projectPath });
-  } else {
-    if (project.type === 'dependencies' && projectVersion) {
-      await execa('npm', ['i', `${name}@${projectVersion}`], {
-        cwd: projectPath,
-      });
-    } else if (project.type === 'devDependencies' && projectVersion) {
-      await execa('npm', ['i', '-D', `${name}@${projectVersion}`], {
-        cwd: projectPath,
-      });
-    }
-  }
+enum WatcherState {
+  Idle,
+  Processing,
+  Aborted,
+  ShuttingDown,
 }
 
-try {
-  const args = process.argv.slice(2);
-  scope = args.includes('--scope')
-    ? (args[args.indexOf('--scope') + 1] as ScopeType)
-    : 'local';
+class Watcher {
+  readonly paths: string[];
+  readonly phases: Phase[];
+  watcher?: FSWatcher;
+  currentPhase?: Phase;
+  state: WatcherState = WatcherState.Idle;
 
-  const projectRegex = /--project\s+(.+?)(?=\s--|$)/g;
-  const projects: ProjectConfigInternal[] = [];
-  let match;
-
-  while ((match = projectRegex.exec(args.join(' '))) !== null) {
-    const props = match[1].split(',').map((p) => p.trim());
-    let path = '';
-    let noSave: boolean | undefined;
-    let hasPeerDependencies: boolean | undefined;
-    let type: string | undefined;
-    let version: string | undefined;
-    props.forEach((prop) => {
-      const [key, value] = prop.split('=');
-      if (key === 'path') path = value;
-      if (key === 'noSave') noSave = value === 'true';
-      if (key === 'hasPeerDependencies') hasPeerDependencies = value === 'true';
-      if (key === 'type') type = value;
-      if (key === 'version') version = value;
-    });
-    projects.push({
-      path,
-      ...(noSave !== undefined ? { noSave } : { noSave: true }),
-      ...(hasPeerDependencies !== undefined ? { hasPeerDependencies } : {}),
-      ...(type ? { type } : {}),
-      ...(version ? { version } : {}),
-    });
+  constructor(props: WatcherProps) {
+    this.phases = props.phases;
+    this.paths = props.paths;
   }
 
-  const { name, version } = await getPackageJSON();
-
-  pkg = new Package({
-    rootDir: process.cwd(),
-    name: name!,
-    version: version!,
-    scope,
-    projects,
-  });
-
-  console.info(`\nRunning sympack for ${chalk.white.bold(pkg.name)}`);
-
-  await pkg.build();
-  await pkg.pack();
-  await pkg.install();
-
-  console.info(
-    `\n${chalk.green('sympack completed. Watching for changes...')}`,
-  );
-  console.info(chalk.dim('Press Ctrl+C at any time to stop and exit'));
-} catch (error) {
-  if (error instanceof PackageError) {
-    console.warn(
-      chalk.yellow(
-        '\nError during sympack. Fix any issues and save to restart...',
-      ),
-    );
-    console.info(chalk.dim('Press Ctrl+C at any time to stop and exit'));
-  } else {
-    const message = (error as Error).message;
-    console.error(chalk.red(`\n${message}`));
-    process.kill(process.pid);
-  }
-}
-
-process.on('SIGINT', async () => {
-  if (isExiting) return;
-  isExiting = true;
-  const logger = ora({ indent: 2 });
-
-  console.log(pkg.projects);
-
-  try {
-    console.info('\nStopping sympack...');
-
-    const tempDir = TEMP_DIR;
-    const { name, version } = await getPackageJSON();
-
-    if (scope === 'global') {
-      logger.start('Cleaning up global installation');
-      try {
-        await execa('npm', ['un', '-g', name!]);
-      } catch {
-        logger.fail('Failed to clean up global installation');
+  private async process() {
+    if (
+      this.state === WatcherState.Processing ||
+      this.state === WatcherState.Aborted
+    ) {
+      if (this.currentPhase) {
+        await this.currentPhase.abort();
       }
-      logger.succeed();
     } else {
-      for (const project of pkg.projects) {
-        const projectPath = project.path;
-        logger.start(`Cleaning up ${chalk.white.bold(projectPath)}`);
-        try {
-          await handleReinstall(name!, project);
-        } catch (error) {
-          if (
-            error instanceof ExecaError &&
-            (error.signal === 'SIGINT' || error.isCanceled)
-          ) {
-            await handleReinstall(name!, project);
-            logger.succeed();
-          } else {
-            logger.fail(`Failed to clean up ${chalk.white.bold(projectPath)}`);
-          }
-          continue;
+      this.state = WatcherState.Processing;
+    }
+
+    console.info(chalk.white.bold('\nRunning sympack...\n'));
+
+    for (const phase of this.phases) {
+      this.currentPhase = phase;
+      const { error } = await phase.run();
+      if (error) {
+        if (error.abort) {
+          this.currentPhase = undefined;
+          this.state = WatcherState.Aborted;
+          return;
         }
-        logger.succeed();
+        if (error.quit) {
+          console.error(
+            chalk.red(`\nError caused sympack to stop:\n${error.message}`),
+          );
+          return await this.stop();
+        }
+        this.currentPhase = undefined;
+        this.state = WatcherState.Idle;
+        console.error(
+          chalk.red(
+            `\n${error.message} Stopped sympack but will continue to watch for changes...`,
+          ),
+        );
+        return;
       }
     }
 
-    logger.start('Removing temp package file');
-    await fs.rm(path.resolve(tempDir, getPackageFileName(name!, version!)), {
-      force: true,
-    });
-    logger.succeed();
-
-    console.info('\nStopped sympack. Exiting...');
-    process.exit(0);
-  } catch (error) {
-    logger.fail((error as Error).message);
-    process.exit(1);
+    console.info(
+      chalk.white.bold('\nCompleted sympack. Watching for changes...'),
+    );
+    this.currentPhase = undefined;
+    this.state = WatcherState.Idle;
   }
-});
 
-setInterval(() => {}, 100); // Keep the process alive
+  async start() {
+    this.watcher = chokidar.watch(await Array.fromAsync(fs.glob(this.paths)), {
+      awaitWriteFinish: {
+        stabilityThreshold: 1000,
+      },
+      persistent: true,
+    });
+
+    this.watcher.on('ready', async () => await this.process());
+
+    this.watcher.on('change', async () => await this.process());
+  }
+
+  async stop() {
+    if (!this.watcher) {
+      console.warn(chalk.yellow('Watcher is not running.'));
+      return;
+    }
+
+    if (this.state === WatcherState.ShuttingDown) {
+      console.warn(
+        chalk.yellow('Force stopped watcher. Cleanup may be incomplete.'),
+      );
+      return;
+    }
+
+    this.state = WatcherState.ShuttingDown;
+
+    if (this.currentPhase) {
+      await this.currentPhase.abort();
+    }
+
+    await this.watcher.close();
+  }
+}
+
+export default Watcher;
