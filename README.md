@@ -243,7 +243,7 @@ See [Releases](https://github.com/byroncustodio/sympack/releases) for version hi
 
 ### Acknowledgments
 
-- Built with [nodemon](https://nodemon.io/) for robust file watching
+- Built with [chokidar](https://github.com/paulmillr/chokidar) for robust file watching
 - Uses [chalk](https://github.com/chalk/chalk) for colorful terminal output
 - Powered by [commander.js](https://github.com/tj/commander.js/) for CLI interface
 

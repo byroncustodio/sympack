@@ -3,41 +3,28 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import nodemon from 'nodemon';
-import { loadConfig, validateConfig } from './config.js';
-import ora from 'ora';
-import { ProjectConfigInternal } from './types.js';
-import { getPackageVersionInProject, isPackageExtraneous } from './utils.js';
+import { Config, ProjectConfigInternal } from './common/types.js';
+import { loadConfig, setConfig, validateConfig } from './common/config.js';
+import Phase from './models/Phase.js';
+import build from './phase/build/index.js';
+import install from './phase/install/index.js';
+import pack from './phase/pack/index.js';
+import {
+  getPackageVersionInProject,
+  isPackageExtraneous,
+} from './common/utils.js';
+import Watcher from './watcher.js';
 
-const __dirname = import.meta.dirname;
 const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
 const program = new Command();
+let watcher: Watcher;
 
-function buildProjectArgs(project: ProjectConfigInternal) {
-  const args: string[] = [];
-
-  args.push(`path=${project.path}`);
-
-  if (project.noSave !== undefined) {
-    args.push(`noSave=${project.noSave}`);
-  } else {
-    args.push('noSave=true');
-  }
-
-  if (project.hasPeerDependencies !== undefined) {
-    args.push(`hasPeerDependencies=${project.hasPeerDependencies}`);
-  }
-
-  if (project.type) {
-    args.push(`type=${project.type}`);
-  }
-
-  if (project.version) {
-    args.push(`version=${project.version}`);
-  }
-
-  return args.join(',');
+function createWatcherPhases(): Phase[] {
+  const phases: Phase[] = [];
+  phases.push(build());
+  phases.push(pack());
+  phases.push(install());
+  return phases;
 }
 
 program
@@ -45,18 +32,22 @@ program
   .description(packageJson.description)
   .version(packageJson.version)
   .action(async () => {
-    console.info('Loading configuration...');
-    const config = await loadConfig();
-    validateConfig(config);
-    console.info(chalk.green('\nConfiguration loaded'));
+    console.info('▸ Config');
+    const sympackConfig = await loadConfig();
+    validateConfig(sympackConfig);
 
-    const watchPaths = config.watch!.paths;
-    const watchExtensions = config.watch!.extensions!;
-    const installScope = config.install!.scope;
-    const installProjects = config.install!
-      .projects! as ProjectConfigInternal[];
+    const config: Config = {
+      watch: {
+        paths: sympackConfig.watch!.paths ?? ['src/**'],
+        extensions: sympackConfig.watch!.extensions ?? ['js', 'ts'],
+      },
+      install: {
+        scope: sympackConfig.install!.scope,
+        projects: sympackConfig.install!.projects,
+      },
+    };
 
-    for (const project of installProjects) {
+    for (const project of config.install.projects as ProjectConfigInternal[]) {
       const isExtraneous = await isPackageExtraneous(
         packageJson.name,
         project.path,
@@ -71,50 +62,31 @@ program
       }
     }
 
-    const args: string[] = [];
+    setConfig(config);
 
-    args.push('--scope');
-    args.push(installScope);
-
-    installProjects.forEach((p) => {
-      args.push('--project');
-      args.push(buildProjectArgs(p));
+    /*const phase = await Phase.create({
+      name: 'Config',
+      setup: confi
     });
 
-    const nm = nodemon({
-      script: path.resolve(__dirname, 'watcher.js'),
-      args,
-      watch: watchPaths,
-      ext: watchExtensions.join(','),
-      delay: 2000,
+    const result = await phase.run();
+    const data = result.data! as Config;*/
+
+    watcher = new Watcher({
+      paths: config.watch.paths,
+      phases: createWatcherPhases(),
     });
 
-    nm.on('restart', (event) => {
-      const logger = ora({ indent: 2 });
-      const files = event as string[];
-      console.info('\nDetected changes in files:');
-
-      files.forEach((file) => logger.info(file.replace(process.cwd(), '.')));
-
-      console.info(chalk.green('\nRestarting sympack...'));
-    });
-
-    nm.on('crash', () => {
-      process.exit(1);
-    });
-
-    nm.on('exit', (code) => {
-      if (!code) {
-        process.exit(0);
-      }
-    });
+    await watcher.start();
   });
 
-program.parseAsync().catch((error) => {
-  if (error instanceof Error && error.name === 'ExitPromptError') {
-    process.exit(0);
-  } else {
-    console.error('Error:', error.message);
-    process.exit(1);
+program.parse();
+
+process.on('SIGINT', async () => {
+  if (watcher) {
+    await watcher.stop();
   }
+
+  console.info(chalk.white.bold('\nStopped sympack. Exiting...'));
+  process.exit(0);
 });

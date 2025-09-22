@@ -9,7 +9,7 @@ function getVersion(dep: string) {
 }
 
 export async function getPackageJSON(): Promise<
-  Pick<PackageJson, 'name' | 'version'>
+  Pick<PackageJson, 'name' | 'version' | 'scripts'>
 > {
   const content = await fs.readFile(PACKAGE_JSON_PATH, 'utf-8');
   return JSON.parse(content);

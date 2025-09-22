@@ -1,5 +1,16 @@
+import { PhaseError, TaskError } from './error.js';
+import Phase from '../models/Phase.js';
+import Task from '../models/Task.js';
+
 export type ScopeType = 'global' | 'local';
 export type SympackConfig = Partial<Config>;
+export type PhaseStatus = 'success' | 'error' | 'abort';
+export type TaskStatus = 'success' | 'error';
+
+export interface ProjectConfigInternal extends ProjectConfig {
+  type?: string;
+  version?: string;
+}
 
 export interface ProjectConfig {
   /**
@@ -26,12 +37,7 @@ export interface ProjectConfig {
   hasPeerDependencies?: boolean;
 }
 
-export interface ProjectConfigInternal extends ProjectConfig {
-  type?: string;
-  version?: string;
-}
-
-interface Config {
+export interface Config {
   watch: {
     /**
      * An array of glob patterns to watch for changes.
@@ -56,14 +62,32 @@ interface Config {
     /**
      * An array of project configurations where the package will be installed when `scope` is set to `local`.
      */
-    projects?: ProjectConfig[];
+    projects?: ProjectConfigInternal[] | ProjectConfig[];
   };
 }
 
-export interface PackageProps {
-  rootDir: string;
+export interface TaskResult {
+  status: TaskStatus;
+  error?: TaskError;
+}
+
+export interface TaskProps {
+  message: string;
+  execute: () => Promise<TaskResult>;
+}
+
+export interface PhaseResult {
+  status: PhaseStatus;
+  error?: PhaseError;
+  data?: unknown;
+}
+
+export interface PhaseProps {
   name: string;
-  version: string;
-  scope: ScopeType;
-  projects?: ProjectConfigInternal[];
+  tasks: Task[];
+}
+
+export interface WatcherProps {
+  paths: string[];
+  phases: Phase[];
 }
