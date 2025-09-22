@@ -1,6 +1,5 @@
 #! /usr/bin/env node
 
-import chalk from 'chalk';
 import { Command } from 'commander';
 import { promises as fs } from 'node:fs';
 import { Config, ProjectConfigInternal } from './common/types.js';
@@ -18,6 +17,7 @@ import Watcher from './watcher.js';
 const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
 const program = new Command();
 let watcher: Watcher;
+let isShuttingDown = false;
 
 function createWatcherPhases(): Phase[] {
   const phases: Phase[] = [];
@@ -66,7 +66,7 @@ program
 
     /*const phase = await Phase.create({
       name: 'Config',
-      setup: confi
+      setup: config
     });
 
     const result = await phase.run();
@@ -83,10 +83,9 @@ program
 program.parse();
 
 process.on('SIGINT', async () => {
-  if (watcher) {
+  if (watcher && !isShuttingDown) {
+    isShuttingDown = true;
     await watcher.stop();
+    process.exit(0);
   }
-
-  console.info(chalk.white.bold('\nStopped sympack. Exiting...'));
-  process.exit(0);
 });

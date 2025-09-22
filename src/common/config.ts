@@ -39,18 +39,18 @@ export async function loadConfig(): Promise<SympackConfig> {
   try {
     await fs.access(configPath);
     config = (await import(configPath)).default;
-    logger.succeed(chalk.dim('Using:', CONFIG_FILE));
+    logger.succeed(`Using: ${CONFIG_FILE}`);
   } catch {
     console.warn(chalk.yellow('Config not found.'));
-    logger.start(chalk.dim('Creating config file...'));
+    logger.start('Creating config file...');
     await fs.copyFile(defaultConfigPath, configPath);
-    logger.succeed(chalk.dim('Created:', CONFIG_FILE));
+    logger.succeed(`Created: ${CONFIG_FILE}`);
   }
 
   try {
     await fs.access(localConfigPath);
     localConfig = (await import(localConfigPath)).default;
-    logger.succeed(chalk.dim('Using:', CONFIG_LOCAL_FILE));
+    logger.succeed(`Using: ${CONFIG_LOCAL_FILE}`);
   } catch {
     const scope = await select({
       message: 'Select scope for package installation:',
@@ -107,7 +107,7 @@ export async function loadConfig(): Promise<SympackConfig> {
     });
 
     if (saveToLocalConfig) {
-      logger.start(chalk.dim('Creating config file...'));
+      logger.start('Creating config file...');
       let content = await fs.readFile(defaultLocalConfigPath, 'utf-8');
       content = content.replace(
         new RegExp(`scope: ${CONFIG_VALUE_REGEX.source}`),
@@ -118,7 +118,7 @@ export async function loadConfig(): Promise<SympackConfig> {
         `projects: [${paths.map((p) => `{ path: '${p}' }`).join(', ')}]`,
       );
       await fs.writeFile(localConfigPath, content, 'utf-8');
-      logger.succeed(chalk.dim('Created:', CONFIG_LOCAL_FILE));
+      logger.succeed(`Created: ${CONFIG_LOCAL_FILE}`);
 
       const gitignorePath = path.resolve(process.cwd(), '.gitignore');
       let gitignoreContent = '';
@@ -134,18 +134,18 @@ export async function loadConfig(): Promise<SympackConfig> {
 
         if (createGitignore) {
           logger.indent = 2;
-          logger.start(chalk.dim('Creating .gitignore file...'));
+          logger.start('Creating .gitignore file...');
           await fs.writeFile(gitignorePath, '', 'utf-8');
-          logger.succeed(chalk.dim('Created: .gitignore'));
+          logger.succeed('Created: .gitignore');
         }
       }
 
       if (!gitignoreContent.includes(CONFIG_LOCAL_FILE)) {
         logger.indent = 2;
-        logger.start(chalk.dim('Updating .gitignore...'));
+        logger.start('Updating .gitignore...');
         gitignoreContent += `\n# sympack local config\n${CONFIG_LOCAL_FILE}\n`;
         await fs.writeFile(gitignorePath, gitignoreContent, 'utf-8');
-        logger.succeed(chalk.dim('Added to .gitignore:', CONFIG_LOCAL_FILE));
+        logger.succeed(`Added to .gitignore: ${CONFIG_LOCAL_FILE}`);
       }
     }
 
@@ -197,5 +197,5 @@ export function validateConfig(config: SympackConfig): void {
     process.exit(1);
   }
 
-  logger.succeed(chalk.dim('Config is valid'));
+  logger.succeed('Config is valid');
 }

@@ -5,7 +5,7 @@ import Phase from '../../models/Phase.js';
 import Task from '../../models/Task.js';
 
 const compileFiles = new Task({
-  message: 'Compiling files...',
+  message: 'Compiling files',
   execute: async function (this: Task): Promise<TaskResult> {
     try {
       await execa({
@@ -19,7 +19,7 @@ const compileFiles = new Task({
 });
 
 const runBuildScript = new Task({
-  message: 'Running "npm run build"...',
+  message: 'Running build script',
   execute: async function (this: Task): Promise<TaskResult> {
     try {
       await execa({

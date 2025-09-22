@@ -27,13 +27,17 @@ class Task {
       this.checkIfAborted();
       return await this.onExecute.apply(this);
     } catch (error) {
+      if (error instanceof TaskError) {
+        if (error.abort) {
+          this.abortController = new AbortController();
+        }
+      }
       return Task.error(error);
     }
   }
 
   abort() {
     this.abortController.abort();
-    this.abortController = new AbortController();
   }
 
   checkIfAborted() {
