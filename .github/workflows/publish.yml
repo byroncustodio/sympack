@@ -7,8 +7,6 @@ on:
       - '.github/CODEOWNERS'
       - '.husky/**'
       - '.idea/**'
-      - '**.md'
-      - '.gitignore'
 
 env:
   HUSKY: 0
