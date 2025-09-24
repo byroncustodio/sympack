@@ -1,10 +1,10 @@
 import { execa } from 'execa';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import { TEMP_DIR } from '../../common/constants.js';
-import Phase from '../../models/Phase.js';
-import Task from '../../models/Task.js';
-import { getPackageFileName, getPackageJSON } from '../../common/utils.js';
+import { TEMP_DIR } from '../common/constants.js';
+import Phase from '../models/Phase.js';
+import Task from '../models/Task.js';
+import { getPackageFileName, getPackageJSON } from '../common/utils.js';
 
 const createPackage = new Task({
   message: 'Creating package file',

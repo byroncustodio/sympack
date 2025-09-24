@@ -1,18 +1,21 @@
+import { Ora } from 'ora';
 import { TaskProps, TaskResult } from '../common/types.js';
 import { TaskError } from '../common/error.js';
+import Phase from './Phase.js';
 
 class Task {
   readonly message: string;
   readonly onExecute: () => Promise<TaskResult>;
   abortController: AbortController = new AbortController();
+  logger?: Ora;
 
   constructor(props: TaskProps) {
     this.message = props.message;
     this.onExecute = props.execute;
   }
 
-  static success(): TaskResult {
-    return { status: 'success' };
+  static success(message?: string): TaskResult {
+    return { status: 'success', message };
   }
 
   static error(error: unknown): TaskResult {
@@ -22,9 +25,10 @@ class Task {
     };
   }
 
-  async execute(): Promise<TaskResult> {
+  async execute(phase: Phase): Promise<TaskResult> {
     try {
       this.checkIfAborted();
+      this.logger = phase.logger;
       return await this.onExecute.apply(this);
     } catch (error) {
       if (error instanceof TaskError) {

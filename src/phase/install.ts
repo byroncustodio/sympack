@@ -1,14 +1,14 @@
 import { execa } from 'execa';
 import path from 'node:path';
-import { ProjectConfigInternal } from '../../common/types.js';
-import { getConfig } from '../../common/config.js';
-import { TEMP_DIR } from '../../common/constants.js';
-import Phase from '../../models/Phase.js';
-import Task from '../../models/Task.js';
-import { getPackageFileName, getPackageJSON } from '../../common/utils.js';
+import { ProjectConfig } from '../common/types.js';
+import { TEMP_DIR } from '../common/constants.js';
+import Phase from '../models/Phase.js';
+import Task from '../models/Task.js';
+import { getPackageFileName, getPackageJSON } from '../common/utils.js';
+import { CONFIG } from './config.js';
 
 const installGlobal = new Task({
-  message: 'Installing in global prefix',
+  message: 'Installing globally',
   execute: async function (this: Task) {
     const tempDir = TEMP_DIR;
     const { name, version } = await getPackageJSON();
@@ -17,7 +17,7 @@ const installGlobal = new Task({
     try {
       await execa({
         cancelSignal: this.abortController.signal,
-      })`npm i -g ${path.join(tempDir, file)} --no-save --ignore-scripts`;
+      })`npm i -g ${path.join(tempDir, file)} --ignore-scripts`;
       return Task.success();
     } catch (error) {
       return Task.error(error);
@@ -26,9 +26,9 @@ const installGlobal = new Task({
 });
 
 function phase() {
-  const config = getConfig();
-  const scope = config.install.scope;
-  const projects = config.install.projects as ProjectConfigInternal[];
+  const config = CONFIG;
+  const scope = config.install?.scope;
+  const projects = config.install?.projects as ProjectConfig[];
   const tasks: Task[] = [];
 
   if (scope === 'global') {

@@ -48,7 +48,7 @@ class Phase {
       this.currentTask = task;
       this.logger.start(task.message);
 
-      const { error } = await task.execute();
+      const { error, message } = await task.execute(this);
 
       if (error) {
         if (error.abort) {
@@ -63,7 +63,7 @@ class Phase {
           errors.push(error);
         }
       } else {
-        this.logger.succeed();
+        this.logger.succeed(message ?? task.message);
       }
     }
 

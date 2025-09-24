@@ -1,8 +1,8 @@
 import { execa } from 'execa';
-import { TaskResult } from '../../common/types.js';
-import { TaskError } from '../../common/error.js';
-import Phase from '../../models/Phase.js';
-import Task from '../../models/Task.js';
+import { TaskResult } from '../common/types.js';
+import { TaskError } from '../common/error.js';
+import Phase from '../models/Phase.js';
+import Task from '../models/Task.js';
 
 const compileFiles = new Task({
   message: 'Compiling files',

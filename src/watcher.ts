@@ -3,7 +3,7 @@ import chokidar, { FSWatcher } from 'chokidar';
 import { promises as fs } from 'fs';
 import { WatcherProps } from './common/types.js';
 import Phase from './models/Phase.js';
-import cleanup from './phase/cleanup/index.js';
+import cleanup from './phase/cleanup.js';
 
 enum WatcherState {
   Idle,

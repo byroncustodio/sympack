@@ -1,5 +1,12 @@
 import { ExecaError } from 'execa';
 
+export class ConfigValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConfigValidationError';
+  }
+}
+
 export class TaskError extends Error {
   constructor(
     error: unknown,

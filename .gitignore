@@ -1,5 +1,5 @@
 dist
 node_modules
 
-# sympack local config
+# sympack
 sympack.config.local.js

@@ -10,3 +10,5 @@
 /dictionaries/
 /copilot.data.migration.agent.xml
 /copilot.data.migration.edit.xml
+/copilot.data.migration.ask.xml
+/copilot.data.migration.ask2agent.xml
