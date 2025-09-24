@@ -5,8 +5,6 @@
 
 sympack streamlines your local package development workflow by automatically detecting file changes, packaging your project, and installing it in specified locations. Perfect for developers working on npm packages who need real-time testing across multiple projects.
 
----
-
 ## Installation
 
 ### Prerequisites
@@ -32,8 +30,6 @@ On first run, sympack will create configuration files in your project root:
 - `sympack.config.local.js` - Local-specific settings (gitignored by default)
 
 Refer to the [Configuration](./docs/configuration.md) section for details on customizing these files.
-
----
 
 ## Basic Usage
 
@@ -94,8 +90,6 @@ const config = {
 };
 ```
 
----
-
 ## Known Issues & Limitations
 
 - Currently, supports npm packages only
@@ -116,8 +110,6 @@ const config = {
 > [!CAUTION]
 > Running multiple instances of sympack targeting the same project may lead to unexpected behavior.
 > If needed, ensure each instance has "noSave: false" in its configuration to fall back to updating `package.json` directly and avoid conflicts.
-
----
 
 ## Acknowledgments
 
