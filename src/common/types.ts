@@ -25,6 +25,12 @@ export interface SympackProjectConfig {
    */
   path?: string;
   /**
+   * Skips the installation process for this project if set to true.
+   *
+   * @default false
+   */
+  skipInstall?: boolean;
+  /**
    * Indicates whether to save the installed package to the project's `package.json` dependencies.
    * If set to true, the installation command will include the `--no-save` flag.
    *

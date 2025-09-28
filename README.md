@@ -79,11 +79,13 @@ const config = {
     projects: [
       { 
         name: 'frontend-app', // must match name in sympack.config.js
-        path: '../frontend-app'
+        path: '../frontend-app',
+        skipInstall: false,
       },
       { 
         name: 'backend-service', // must match name in sympack.config.js
-        path: '../backend-service'
+        path: '../backend-service',
+        skipInstall: true,
       },
     ],
   },

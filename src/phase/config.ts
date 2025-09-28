@@ -296,6 +296,7 @@ const loadConfig = new Task({
               localConfig.install!.projects!.push({
                 name: project.name,
                 path: projectPath,
+                skipInstall: false,
               });
             }
 
@@ -389,6 +390,7 @@ const loadConfig = new Task({
             localConfig.install!.projects!.push({
               name: projectName,
               path: projectPath,
+              skipInstall: false,
             });
 
             addingProject = await select({

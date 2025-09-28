@@ -28,7 +28,7 @@ function phase() {
       }),
     );
   } else {
-    for (const project of projects) {
+    for (const project of projects.filter((p) => p.skipInstall === false)) {
       tasks.push(
         new Task({
           message: 'Cleaning up in ' + project.path,

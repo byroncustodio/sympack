@@ -34,7 +34,7 @@ function phase() {
   if (scope === 'global') {
     tasks.push(installGlobal);
   } else {
-    for (const project of projects) {
+    for (const project of projects.filter((p) => p.skipInstall === false)) {
       tasks.push(
         new Task({
           message: 'Installing in ' + project.path,

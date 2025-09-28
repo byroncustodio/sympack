@@ -57,6 +57,7 @@ This is the local configuration file that defines the actual paths where package
 |----------|------|----------|-------------|
 | `name` | `string` | Yes | Must match the name defined in `sympack.config.js` |
 | `path` | `string` | Yes | Absolute or relative path to the project where the package will be installed |
+| `skipInstall` | `boolean` | No | Whether to skip the installation for this project. If `true`, the project will be ignored during installation |
 
 ---
 
@@ -107,11 +108,13 @@ const config = {
     projects: [
       { 
         name: 'project-name', // must match name in sympack.config.js
-        path: '../my-app' 
+        path: '../my-app',
+        skipInstall: false
       },
       { 
         name: 'another-project-name', // must match name in sympack.config.js
-        path: '/absolute/path/to/project' 
+        path: '/absolute/path/to/project',
+        skipInstall: true
       },
     ],
   },
